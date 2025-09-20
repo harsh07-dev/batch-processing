@@ -43,7 +43,6 @@ public class CustomerController {
 			}
 
 			return new ResponseEntity<>("File successfully uploaded to: " + savedFile.getAbsolutePath(), HttpStatus.OK);
-
 		} catch (IOException e) {
 			// Handle any exceptions that occur during file creation or writing
 			throw new RuntimeException("Failed to save uploaded file.", e);
