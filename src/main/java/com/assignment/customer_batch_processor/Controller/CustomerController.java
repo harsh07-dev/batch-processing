@@ -58,12 +58,10 @@
 package com.assignment.customer_batch_processor.Controller;
 
 import com.assignment.customer_batch_processor.service.BatchJobService;
-import com.fasterxml.jackson.databind.util.JSONPObject;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.BatchStatus;
 import org.springframework.batch.core.JobExecution;
+import org.springframework.batch.core.explore.JobExplorer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -89,9 +87,12 @@ public class CustomerController {
 
     @Autowired
     private FileConversionService fileConversionService;
+
+    @Autowired
+    private JobExplorer jobExplorer;
     
     @PostMapping("/upload")
-    public ResponseEntity<Object> handleExcelUpload(
+    public ResponseEntity<Object> handleBatchUpload(
             @RequestParam(value = "file", required = false) MultipartFile file) {
         
         if (file == null || file.isEmpty()) {

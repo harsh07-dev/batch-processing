@@ -1,4 +1,4 @@
-package com.assignment.customer_batch_processor.runner;
+package com.assignment.customer_batch_processor.Utilities;
 
 import com.assignment.customer_batch_processor.Customer_Entity.Customer;
 import lombok.Getter;
@@ -87,7 +87,6 @@ public class CustomerItemReader implements ItemReader<Customer> {
     
     @Override
     public Customer read() throws Exception {
-        // Ensure reader is initialized
         if (flatFileItemReader == null) {
             initialize();
         }
@@ -110,19 +109,5 @@ public class CustomerItemReader implements ItemReader<Customer> {
         }
         
         return customer;
-    }
-
-    /**
-     * Reset reader state (useful for testing)
-     */
-    public void reset() {
-        readCount = 0;
-        if (flatFileItemReader != null) {
-            try {
-                flatFileItemReader.close();
-            } catch (Exception e) {
-                log.warn("Error closing file reader: {}", e.getMessage());
-            }
-        }
     }
 }
