@@ -2,6 +2,7 @@ package com.assignment.customer_batch_processor.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.*;
+import org.springframework.batch.core.explore.JobExplorer;
 import org.springframework.batch.core.launch.JobLauncher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -20,11 +21,14 @@ public class BatchJobService {
     @Autowired
     @Qualifier("csvReadingJob")
     private Job csvReadingJob;
+
+    @Autowired
+    private JobExplorer jobExplorer;
     
     /**
      * Process a CSV file using Spring Batch
      */
-    public JobExecution processCustomerFile(String filePath) {
+    public JobExecution processCustomerFile(String filePath) throws Exception{
         try {
             log.info("Starting batch job for file: {}", filePath);
             
@@ -58,31 +62,5 @@ public class BatchJobService {
             throw new RuntimeException("Batch job execution failed", e);
         }
     }
-    
-    /**
-     * Get job execution status details
-     */
-    public String getJobExecutionStatus(JobExecution jobExecution) {
-        if (jobExecution == null) {
-            return "Job execution is null";
-        }
-        
-        StringBuilder status = new StringBuilder();
-        status.append("Job Name: ").append(jobExecution.getJobInstance().getJobName()).append("\n");
-        status.append("Status: ").append(jobExecution.getStatus()).append("\n");
-        status.append("Exit Status: ").append(jobExecution.getExitStatus()).append("\n");
-        status.append("Start Time: ").append(jobExecution.getStartTime()).append("\n");
-        status.append("End Time: ").append(jobExecution.getEndTime()).append("\n");
-        
-        if (jobExecution.getStepExecutions() != null) {
-            jobExecution.getStepExecutions().forEach(stepExecution -> {
-                status.append("Step: ").append(stepExecution.getStepName()).append(" - ");
-                status.append("Read Count: ").append(stepExecution.getReadCount()).append(", ");
-                status.append("Write Count: ").append(stepExecution.getWriteCount()).append(", ");
-                status.append("Skip Count: ").append(stepExecution.getSkipCount()).append("\n");
-            });
-        }
-        
-        return status.toString();
-    }
+
 }

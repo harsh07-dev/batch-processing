@@ -30,6 +30,7 @@ public class EncryptionService {
     private SecretKey getSecretKey() {
         // Ensure key is exactly 16 bytes for AES-128
         String key = secretKey;
+        log.info("Encryption key {} ", key);
         if (key.length() < 16) {
             key = key + "0".repeat(16 - key.length());
         } else if (key.length() > 16) {
@@ -64,65 +65,49 @@ public class EncryptionService {
         }
     }
     
-    /**
-     * Decrypts the given encrypted text using AES decryption
-     * @param encryptedText Base64 encoded encrypted string
-     * @return Decrypted plain text
-     */
-    public String decrypt(String encryptedText) {
-        try {
-            if (encryptedText == null || encryptedText.trim().isEmpty()) {
-                return encryptedText;
-            }
-            
-            Cipher cipher = Cipher.getInstance(TRANSFORMATION);
-            cipher.init(Cipher.DECRYPT_MODE, getSecretKey());
-            
-            byte[] decryptedBytes = cipher.doFinal(Base64.getDecoder().decode(encryptedText));
-            String decrypted = new String(decryptedBytes);
-            
-            log.debug("DECRYPTION: Successfully decrypted data");
-            return decrypted;
-            
-        } catch (Exception e) {
-            log.error("DECRYPTION: Error decrypting data: {}", e.getMessage());
-            throw new RuntimeException("Decryption failed", e);
-        }
-    }
+//    /**
+//     * Decrypts the given encrypted text using AES decryption
+//     * @param encryptedText Base64 encoded encrypted string
+//     * @return Decrypted plain text
+//     */
+//    public String decrypt(String encryptedText) {
+//        try {
+//            if (encryptedText == null || encryptedText.trim().isEmpty()) {
+//                return encryptedText;
+//            }
+//
+//            Cipher cipher = Cipher.getInstance(TRANSFORMATION);
+//            cipher.init(Cipher.DECRYPT_MODE, getSecretKey());
+//
+//            byte[] decryptedBytes = cipher.doFinal(Base64.getDecoder().decode(encryptedText));
+//            String decrypted = new String(decryptedBytes);
+//
+//            log.debug("DECRYPTION: Successfully decrypted data");
+//            return decrypted;
+//
+//        } catch (Exception e) {
+//            log.error("DECRYPTION: Error decrypting data: {}", e.getMessage());
+//            throw new RuntimeException("Decryption failed", e);
+//        }
+//    }
     
-    /**
-     * Generates a new AES secret key (for initial setup)
-     * @return Base64 encoded secret key
-     */
-    public String generateSecretKey() {
-        try {
-            KeyGenerator keyGenerator = KeyGenerator.getInstance(ALGORITHM);
-            keyGenerator.init(128); // AES-128
-            SecretKey secretKey = keyGenerator.generateKey();
-            return Base64.getEncoder().encodeToString(secretKey.getEncoded());
-        } catch (Exception e) {
-            log.error("KEY GENERATION: Error generating secret key: {}", e.getMessage());
-            throw new RuntimeException("Key generation failed", e);
-        }
-    }
-    
-    /**
-     * Validate if the encryption service is working properly
-     * @return true if encryption/decryption works correctly
-     */
-    public boolean validateEncryptionService() {
-        try {
-            String testData = "TEST123";
-            String encrypted = encrypt(testData);
-            String decrypted = decrypt(encrypted);
-            
-            boolean isValid = testData.equals(decrypted);
-            log.info("VALIDATION: Encryption service test - {}", isValid ? "PASSED" : "FAILED");
-            return isValid;
-            
-        } catch (Exception e) {
-            log.error("VALIDATION: Encryption service validation failed: {}", e.getMessage());
-            return false;
-        }
-    }
+//    /**
+//     * Validate if the encryption service is working properly
+//     * @return true if encryption/decryption works correctly
+//     */
+//    public boolean validateEncryptionService() {
+//        try {
+//            String testData = "TEST123";
+//            String encrypted = encrypt(testData);
+//            String decrypted = decrypt(encrypted);
+//
+//            boolean isValid = testData.equals(decrypted);
+//            log.info("VALIDATION: Encryption service test - {}", isValid ? "PASSED" : "FAILED");
+//            return isValid;
+//
+//        } catch (Exception e) {
+//            log.error("VALIDATION: Encryption service validation failed: {}", e.getMessage());
+//            return false;
+//        }
+//    }
 }

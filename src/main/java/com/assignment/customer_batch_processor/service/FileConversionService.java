@@ -41,9 +41,8 @@ public class FileConversionService {
         String xlsxFilePath = saveUploadedFile(file);
         
         // Convert XLSX to CSV
-        String csvFilePath = performXlsxToCsvConversion(xlsxFilePath);
-        
-        return csvFilePath;
+
+        return performXlsxToCsvConversion(xlsxFilePath);
     }
     
     /**
@@ -176,58 +175,6 @@ public class FileConversionService {
             case _NONE:
             default:
                 return "";
-        }
-    }
-    
-    /**
-     * Triggers the batch processing job for the converted CSV file
-     */
-    private void triggerBatchProcessing(String csvFilePath) {
-        try {
-            log.info("Triggering batch processing for CSV file: {}", csvFilePath);
-            
-            JobExecution jobExecution = batchJobService.processCustomerFile(csvFilePath);
-            
-            log.info("Batch job started with ID: {}, Status: {}", 
-                       jobExecution.getId(), jobExecution.getStatus());
-            
-        } catch (Exception e) {
-            log.error("Error starting batch job for file {}: {}", csvFilePath, e.getMessage());
-            throw new RuntimeException("Failed to start batch processing", e);
-        }
-    }
-    
-    /**
-     * Validates XLSX file structure (optional validation)
-     */
-    public boolean validateXlsxFile(MultipartFile file) {
-        try (FileInputStream fis = new FileInputStream(saveUploadedFile(file));
-             XSSFWorkbook workbook = new XSSFWorkbook(fis)) {
-            
-            Sheet sheet = workbook.getSheetAt(0);
-            Row headerRow = sheet.getRow(0);
-            
-            if (headerRow == null) {
-                log.info("XLSX file has no header row");
-                return false;
-            }
-            
-            // Expected headers
-            String[] expectedHeaders = {"name", "email", "phoneNumber", "aadhaarNumber", "panNumber", "state", "city"};
-            
-            // Check if we have minimum required columns
-            if (headerRow.getLastCellNum() < expectedHeaders.length) {
-                log.info("XLSX file has insufficient columns. Expected: {}, Found: {}",
-                           expectedHeaders.length, headerRow.getLastCellNum());
-                return false;
-            }
-            
-            log.info("XLSX file validation passed");
-            return true;
-            
-        } catch (Exception e) {
-            log.error("Error validating XLSX file: {}", e.getMessage());
-            return false;
         }
     }
 }

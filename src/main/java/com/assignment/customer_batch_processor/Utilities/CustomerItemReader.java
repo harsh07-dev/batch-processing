@@ -1,4 +1,4 @@
-package com.assignment.customer_batch_processor.runner;
+package com.assignment.customer_batch_processor.Utilities;
 
 import com.assignment.customer_batch_processor.Customer_Entity.Customer;
 import lombok.Getter;
@@ -10,6 +10,7 @@ import org.springframework.batch.item.file.mapping.BeanWrapperFieldSetMapper;
 import org.springframework.batch.item.file.mapping.DefaultLineMapper;
 import org.springframework.batch.item.file.transform.DelimitedLineTokenizer;
 import org.springframework.batch.item.file.transform.FieldSet;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.stereotype.Component;
 
@@ -32,8 +33,8 @@ public class CustomerItemReader implements ItemReader<Customer> {
     
     private FlatFileItemReader<Customer> flatFileItemReader;
     
-    //@Value("#{jobParameters['filePath']}")
-    private String filePath="src/main/resources/uploads/TestFile.csv";
+    @Value("#{jobParameters['filePath']}")
+    private String filePath;
 
     /**
      * -- GETTER --
@@ -41,6 +42,10 @@ public class CustomerItemReader implements ItemReader<Customer> {
      */
     @Getter
     private int readCount = 0;
+
+    public CustomerItemReader(String filePath) {
+        this.filePath = filePath;
+    }
 
     @PostConstruct
     public void initialize() {
@@ -87,7 +92,6 @@ public class CustomerItemReader implements ItemReader<Customer> {
     
     @Override
     public Customer read() throws Exception {
-        // Ensure reader is initialized
         if (flatFileItemReader == null) {
             initialize();
         }
@@ -110,19 +114,5 @@ public class CustomerItemReader implements ItemReader<Customer> {
         }
         
         return customer;
-    }
-
-    /**
-     * Reset reader state (useful for testing)
-     */
-    public void reset() {
-        readCount = 0;
-        if (flatFileItemReader != null) {
-            try {
-                flatFileItemReader.close();
-            } catch (Exception e) {
-                log.warn("Error closing file reader: {}", e.getMessage());
-            }
-        }
     }
 }

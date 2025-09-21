@@ -58,11 +58,10 @@
 package com.assignment.customer_batch_processor.Controller;
 
 import com.assignment.customer_batch_processor.service.BatchJobService;
-import com.fasterxml.jackson.databind.util.JSONPObject;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.batch.core.BatchStatus;
 import org.springframework.batch.core.JobExecution;
+import org.springframework.batch.core.explore.JobExplorer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -75,6 +74,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.assignment.customer_batch_processor.service.FileConversionService;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Slf4j
@@ -87,9 +87,12 @@ public class CustomerController {
 
     @Autowired
     private FileConversionService fileConversionService;
+
+    @Autowired
+    private JobExplorer jobExplorer;
     
     @PostMapping("/upload")
-    public ResponseEntity<Object> handleExcelUpload(
+    public ResponseEntity<Object> handleBatchUpload(
             @RequestParam(value = "file", required = false) MultipartFile file) {
         
         if (file == null || file.isEmpty()) {
@@ -116,6 +119,27 @@ public class CustomerController {
 //            response.put("csvFilePath", csvFilePath);
             response.put("jobId", jobExecution.getId());
             response.put("status", jobExecution.getStatus().toString());
+            if(jobExecution.getStatus().equals(BatchStatus.FAILED)) {
+                List<Throwable> failureExceptions = jobExecution.getAllFailureExceptions();
+                String errorMessage = "Job failed";
+
+                if (!failureExceptions.isEmpty()) {
+                    Throwable rootCause = failureExceptions.getFirst();
+                    // Get the actual cause message, not the wrapper
+                    while (rootCause.getCause() != null) {
+                        rootCause = rootCause.getCause();
+                    }
+                    errorMessage = rootCause.getMessage();
+                }
+
+                Map<String,Object> errorResponse = new HashMap<>();
+
+                errorResponse.put("status","FAILED");
+                String retryMessage = " Please fix the file and re-upload";
+                errorResponse.put("message", errorMessage + retryMessage);
+
+                return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+            }
 //            response.put("jobDetails", batchJobService.getJobExecutionStatus(jobExecution));
 
             return new ResponseEntity<>(response, HttpStatus.OK);
@@ -130,8 +154,8 @@ public class CustomerController {
             return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-    
-    
-    
-    
+
+
+
+
 }

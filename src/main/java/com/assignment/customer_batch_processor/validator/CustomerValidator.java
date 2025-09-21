@@ -2,8 +2,6 @@ package com.assignment.customer_batch_processor.validator;
 
 import com.assignment.customer_batch_processor.Customer_Entity.Customer;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.log;
-import org.slf4j.logFactory;
 import org.springframework.stereotype.Component;
 
 import java.util.regex.Pattern;
@@ -39,7 +37,7 @@ public class CustomerValidator {
      * @param customer Customer object to validate
      * @return true if all validations pass, false otherwise
      */
-    public boolean validateCustomer(Customer customer) {
+    public boolean validateCustomer(Customer customer) throws Exception{
         if (customer == null) {
             log.warn(" VALIDATOR: Customer object is null");
             return false;
@@ -102,7 +100,6 @@ public class CustomerValidator {
     
     /**
      * Validates name field - only alphabets and spaces allowed
-     * Example: "JOHN DOE" ✅, "JOHN123" ❌
      */
     public boolean isValidName(String name) {
         if (name == null || name.trim().isEmpty()) {
@@ -113,7 +110,6 @@ public class CustomerValidator {
     
     /**
      * Validates Indian mobile number - 10 digits starting with 6, 7, 8, or 9
-     * Example: "9876543210" ✅, "1234567890" ❌, "98765432101" ❌
      */
     public boolean isValidMobile(String mobile) {
         if (mobile == null || mobile.trim().isEmpty()) {
@@ -124,7 +120,6 @@ public class CustomerValidator {
     
     /**
      * Validates email address format
-     * Example: "john.doe@example.com" ✅, "invalid-email" ❌
      */
     public boolean isValidEmail(String email) {
         if (email == null || email.trim().isEmpty()) {
@@ -135,7 +130,6 @@ public class CustomerValidator {
     
     /**
      * Validates Aadhaar number - exactly 12 digits
-     * Example: "123456789012" ✅, "12345678901" ❌, "ABCD12345678" ❌
      */
     public boolean isValidAadhaar(String aadhaar) {
         if (aadhaar == null || aadhaar.trim().isEmpty()) {
@@ -146,7 +140,6 @@ public class CustomerValidator {
     
     /**
      * Validates PAN number - 5 letters, 4 digits, 1 letter (e.g., ABCDE1234F)
-     * Example: "ABCDE1234F" ✅, "AB1234567C" ❌, "ABCDEFGHIJ" ❌
      */
     public boolean isValidPAN(String pan) {
         if (pan == null || pan.trim().isEmpty()) {
@@ -157,7 +150,6 @@ public class CustomerValidator {
     
     /**
      * Validates state name - only alphabets and spaces allowed
-     * Example: "MAHARASHTRA" ✅, "UTTAR PRADESH" ✅, "STATE123" ❌
      */
     public boolean isValidState(String state) {
         if (state == null || state.trim().isEmpty()) {
@@ -168,79 +160,11 @@ public class CustomerValidator {
     
     /**
      * Validates city name - only alphabets and spaces allowed
-     * Example: "MUMBAI" ✅, "NEW DELHI" ✅, "CITY123" ❌
      */
     public boolean isValidCity(String city) {
         if (city == null || city.trim().isEmpty()) {
             return false;
         }
         return CITY_PATTERN.matcher(city.trim()).matches();
-    }
-    
-    /**
-     * Get validation statistics for reporting
-     */
-    public ValidationStats validateAndGetStats(Customer customer) {
-        boolean nameValid = isValidName(customer.getName());
-        boolean mobileValid = isValidMobile(customer.getPhoneNumber());
-        boolean emailValid = isValidEmail(customer.getEmail());
-        boolean aadhaarValid = isValidAadhaar(customer.getAadhaarNumber());
-        boolean panValid = isValidPAN(customer.getPanNumber());
-        boolean stateValid = isValidState(customer.getState());
-        boolean cityValid = isValidCity(customer.getCity());
-        
-        return new ValidationStats(nameValid, mobileValid, emailValid, aadhaarValid, 
-                                 panValid, stateValid, cityValid);
-    }
-    
-    /**
-     * Validation statistics holder
-     */
-    public static class ValidationStats {
-        private final boolean nameValid;
-        private final boolean mobileValid;
-        private final boolean emailValid;
-        private final boolean aadhaarValid;
-        private final boolean panValid;
-        private final boolean stateValid;
-        private final boolean cityValid;
-        
-        public ValidationStats(boolean nameValid, boolean mobileValid, boolean emailValid,
-                             boolean aadhaarValid, boolean panValid, boolean stateValid, 
-                             boolean cityValid) {
-            this.nameValid = nameValid;
-            this.mobileValid = mobileValid;
-            this.emailValid = emailValid;
-            this.aadhaarValid = aadhaarValid;
-            this.panValid = panValid;
-            this.stateValid = stateValid;
-            this.cityValid = cityValid;
-        }
-        
-        public boolean isAllValid() {
-            return nameValid && mobileValid && emailValid && aadhaarValid && 
-                   panValid && stateValid && cityValid;
-        }
-        
-        public int getInvalidCount() {
-            int count = 0;
-            if (!nameValid) count++;
-            if (!mobileValid) count++;
-            if (!emailValid) count++;
-            if (!aadhaarValid) count++;
-            if (!panValid) count++;
-            if (!stateValid) count++;
-            if (!cityValid) count++;
-            return count;
-        }
-        
-        // Getters
-        public boolean isNameValid() { return nameValid; }
-        public boolean isMobileValid() { return mobileValid; }
-        public boolean isEmailValid() { return emailValid; }
-        public boolean isAadhaarValid() { return aadhaarValid; }
-        public boolean isPanValid() { return panValid; }
-        public boolean isStateValid() { return stateValid; }
-        public boolean isCityValid() { return cityValid; }
     }
 }
