@@ -45,9 +45,6 @@ public class FileConversionService {
         // Convert XLSX to CSV
         String csvFilePath = performXlsxToCsvConversion(xlsxFilePath);
         
-        // Trigger batch processing
-        triggerBatchProcessing(csvFilePath);
-        
         return csvFilePath;
     }
     

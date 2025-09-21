@@ -3,8 +3,7 @@ package com.assignment.customer_batch_processor.processor;
 import com.assignment.customer_batch_processor.Customer_Entity.Customer;
 import com.assignment.customer_batch_processor.service.EncryptionService;
 import com.assignment.customer_batch_processor.validator.CustomerValidator;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.item.ItemProcessor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -24,9 +23,8 @@ import java.util.UUID;
  * 7. Pass valid records to Writer
  */
 @Component
+@Slf4j
 public class CustomerItemProcessor implements ItemProcessor<Customer, Customer> {
-    
-    private static final Logger logger = LoggerFactory.getLogger(CustomerItemProcessor.class);
     
     @Autowired
     private CustomerValidator customerValidator;
@@ -42,7 +40,7 @@ public class CustomerItemProcessor implements ItemProcessor<Customer, Customer> 
     public Customer process(Customer customer) throws Exception {
         processedCount++;
         
-        logger.debug("🔄 PROCESSOR: Processing customer #{} - {}", processedCount, customer.getName());
+        log.info(" PROCESSOR: Processing customer #{} - {}", processedCount, customer.getName());
         
         try {
             // STEP 1: Clean and normalize data
@@ -69,14 +67,14 @@ public class CustomerItemProcessor implements ItemProcessor<Customer, Customer> 
             validCount++;
             logProgress();
             
-            logger.debug("✅ PROCESSOR: Successfully processed customer - Name: {}", 
+            log.info(" PROCESSOR: Successfully processed customer - Name: {}",
                         cleanedCustomer.getName());
             
             return cleanedCustomer;
             
         } catch (Exception e) {
             invalidCount++;
-            logger.error("❌ PROCESSOR: Error processing customer {}: {}", 
+            log.error(" PROCESSOR: Error processing customer {}: {}",
                         customer.getName(), e.getMessage());
             logProgress();
             return null; // Skip records with processing errors
@@ -86,8 +84,8 @@ public class CustomerItemProcessor implements ItemProcessor<Customer, Customer> 
     /**
      * STEP 1: Clean and normalize customer data
      */
-    private Customer cleanCustomerData(Customer customer) {
-        logger.debug("🧹 PROCESSOR: Cleaning customer data");
+    private Customer  cleanCustomerData(Customer customer) {
+        log.info(" PROCESSOR: Cleaning customer data");
         
         if (customer.getName() != null) {
             customer.setName(customer.getName().trim().toUpperCase());
@@ -126,12 +124,12 @@ public class CustomerItemProcessor implements ItemProcessor<Customer, Customer> 
      * STEP 2: Validate customer using regex patterns
      */
     private boolean validateCustomer(Customer customer) {
-        logger.debug("✔️ PROCESSOR: Validating customer data");
+        log.info("PROCESSOR: Validating customer data");
         
         boolean isValid = customerValidator.validateCustomer(customer);
         
         if (!isValid) {
-            logger.warn("⚠️ PROCESSOR: Invalid customer data - Name: {}, Email: {}", 
+            log.info("PROCESSOR: Invalid customer data - Name: {}, Email: {}",
                        customer.getName(), customer.getEmail());
         }
         
@@ -142,18 +140,18 @@ public class CustomerItemProcessor implements ItemProcessor<Customer, Customer> 
      * STEP 4: Encrypt sensitive data (Aadhaar & PAN)
      */
     private void encryptSensitiveData(Customer customer) throws Exception {
-        logger.debug("🔒 PROCESSOR: Encrypting sensitive data");
+        log.info(" PROCESSOR: Encrypting sensitive data");
         
         if (customer.getAadhaarNumber() != null) {
             String encryptedAadhaar = encryptionService.encrypt(customer.getAadhaarNumber());
             customer.setAadhaarNumber(encryptedAadhaar);
-            logger.debug("🔐 PROCESSOR: Aadhaar encrypted successfully");
+            log.info(" PROCESSOR: Aadhaar encrypted successfully");
         }
         
         if (customer.getPanNumber() != null) {
             String encryptedPan = encryptionService.encrypt(customer.getPanNumber());
             customer.setPanNumber(encryptedPan);
-            logger.debug("🔐 PROCESSOR: PAN encrypted successfully");
+            log.info(" PROCESSOR: PAN encrypted successfully");
         }
     }
     
@@ -162,7 +160,7 @@ public class CustomerItemProcessor implements ItemProcessor<Customer, Customer> 
      */
     private void logProgress() {
         if (processedCount % 1000 == 0) {
-            logger.info("📊 PROCESSOR: Progress - Processed: {}, Valid: {}, Invalid: {}", 
+            log.info(" PROCESSOR: Progress - Processed: {}, Valid: {}, Invalid: {}",
                        processedCount, validCount, invalidCount);
         }
     }
