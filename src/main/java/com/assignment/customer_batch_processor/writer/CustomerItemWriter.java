@@ -1,8 +1,7 @@
 package com.assignment.customer_batch_processor.writer;
 
 import com.assignment.customer_batch_processor.Customer_Entity.Customer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.item.Chunk;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,9 +25,8 @@ import java.util.List;
  * 6. Handle database errors gracefully
  */
 @Component
+@Slf4j
 public class CustomerItemWriter implements ItemWriter<Customer> {
-    
-    private static final Logger logger = LoggerFactory.getLogger(CustomerItemWriter.class);
     
     @PersistenceContext
     private EntityManager entityManager;
@@ -44,7 +42,7 @@ public class CustomerItemWriter implements ItemWriter<Customer> {
         List<? extends Customer> customers = chunk.getItems();
         int chunkSize = customers.size();
         
-        logger.info("💾 WRITER: Writing chunk of {} customers to database", chunkSize);
+        log.info("WRITER: Writing chunk of {} customers to database", chunkSize);
         
         int successCount = 0;
         int failCount = 0;
@@ -56,7 +54,7 @@ public class CustomerItemWriter implements ItemWriter<Customer> {
                 
                 // STEP 2: Check for duplicates
                 if (isDuplicateCustomer(customer)) {
-                    logger.warn("⚠️ WRITER: Duplicate customer found - Email: {}", customer.getEmail());
+                    log.warn("WRITER: Duplicate customer found - Email: {}", customer.getEmail());
                     failCount++;
                     continue;
                 }
@@ -65,12 +63,12 @@ public class CustomerItemWriter implements ItemWriter<Customer> {
                 saveCustomer(customer);
                 successCount++;
                 
-                logger.debug("✅ WRITER: Saved customer - ID: {}, Name: {}, Email: {}", 
+                log.debug("WRITER: Saved customer - ID: {}, Name: {}, Email: {}",
                            customer.getId(), customer.getName(), customer.getEmail());
                 
             } catch (Exception e) {
                 failCount++;
-                logger.error("❌ WRITER: Failed to save customer {}: {}", 
+                log.error("WRITER: Failed to save customer {}: {}",
                            customer.getName(), e.getMessage());
                 
                 // Don't throw exception - just log and continue with next record
@@ -83,7 +81,7 @@ public class CustomerItemWriter implements ItemWriter<Customer> {
             entityManager.flush();
             entityManager.clear(); // Clear persistence context to free memory
         } catch (Exception e) {
-            logger.error("❌ WRITER: Error flushing entity manager: {}", e.getMessage());
+            log.error("WRITER: Error flushing entity manager: {}", e.getMessage());
             throw e;
         }
         
@@ -119,7 +117,7 @@ public class CustomerItemWriter implements ItemWriter<Customer> {
             return count > 0;
             
         } catch (Exception e) {
-            logger.warn("⚠️ WRITER: Error checking for duplicate: {}", e.getMessage());
+            log.warn("WRITER: Error checking for duplicate: {}", e.getMessage());
             return false; // If check fails, proceed with save
         }
     }
@@ -145,10 +143,10 @@ public class CustomerItemWriter implements ItemWriter<Customer> {
      */
     private void logChunkResults(int chunkSize, int successCount, int failCount) {
         if (failCount > 0) {
-            logger.warn("📊 WRITER: Chunk processed - Total: {}, Saved: {}, Failed: {}", 
+            log.warn("WRITER: Chunk processed - Total: {}, Saved: {}, Failed: {}",
                        chunkSize, successCount, failCount);
         } else {
-            logger.info("📊 WRITER: Chunk processed successfully - Total: {}, Saved: {}", 
+            log.info("WRITER: Chunk processed successfully - Total: {}, Saved: {}",
                        chunkSize, successCount);
         }
     }
@@ -159,7 +157,7 @@ public class CustomerItemWriter implements ItemWriter<Customer> {
     private void logOverallProgress() {
         if (totalWritten % 5000 == 0 && totalWritten > 0) {
             double successRate = (double) successfulWrites / totalWritten * 100;
-            logger.info("📈 WRITER: Overall Progress - Total: {}, Success: {} ({:.1f}%), Failed: {}", 
+            log.info("WRITER: Overall Progress - Total: {}, Success: {} {}, Failed: {}",
                        totalWritten, successfulWrites, successRate, failedWrites);
         }
     }
@@ -184,13 +182,13 @@ public class CustomerItemWriter implements ItemWriter<Customer> {
      * Batch write completion callback
      */
     public void onWriteCompletion() {
-        logger.info("🏁 WRITER: Batch writing completed!");
-        logger.info("📋 WRITER: Final Statistics - Total: {}, Successful: {}, Failed: {}", 
+        log.info("WRITER: Batch writing completed!");
+        log.info("WRITER: Final Statistics - Total: {}, Successful: {}, Failed: {}",
                    totalWritten, successfulWrites, failedWrites);
         
         if (failedWrites > 0) {
             double failureRate = (double) failedWrites / totalWritten * 100;
-            logger.warn("⚠️ WRITER: Failure rate: {:.2f}%", failureRate);
+            log.warn("WRITER: Failure rate: {}", failureRate);
         }
     }
     

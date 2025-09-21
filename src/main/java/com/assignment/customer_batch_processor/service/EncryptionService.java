@@ -1,7 +1,6 @@
 package com.assignment.customer_batch_processor.service;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -16,9 +15,9 @@ import java.util.Base64;
  * Uses AES encryption algorithm
  */
 @Service
+@Slf4j
 public class EncryptionService {
     
-    private static final Logger logger = LoggerFactory.getLogger(EncryptionService.class);
     private static final String ALGORITHM = "AES";
     private static final String TRANSFORMATION = "AES";
     
@@ -56,11 +55,11 @@ public class EncryptionService {
             byte[] encryptedBytes = cipher.doFinal(plainText.getBytes());
             String encrypted = Base64.getEncoder().encodeToString(encryptedBytes);
             
-            logger.debug("🔐 ENCRYPTION: Successfully encrypted data of length: {}", plainText.length());
+            log.debug("ENCRYPTION: Successfully encrypted data of length: {}", plainText.length());
             return encrypted;
             
         } catch (Exception e) {
-            logger.error("❌ ENCRYPTION: Error encrypting data: {}", e.getMessage());
+            log.error("ENCRYPTION: Error encrypting data: {}", e.getMessage());
             throw new RuntimeException("Encryption failed", e);
         }
     }
@@ -82,11 +81,11 @@ public class EncryptionService {
             byte[] decryptedBytes = cipher.doFinal(Base64.getDecoder().decode(encryptedText));
             String decrypted = new String(decryptedBytes);
             
-            logger.debug("🔓 DECRYPTION: Successfully decrypted data");
+            log.debug("DECRYPTION: Successfully decrypted data");
             return decrypted;
             
         } catch (Exception e) {
-            logger.error("❌ DECRYPTION: Error decrypting data: {}", e.getMessage());
+            log.error("DECRYPTION: Error decrypting data: {}", e.getMessage());
             throw new RuntimeException("Decryption failed", e);
         }
     }
@@ -102,7 +101,7 @@ public class EncryptionService {
             SecretKey secretKey = keyGenerator.generateKey();
             return Base64.getEncoder().encodeToString(secretKey.getEncoded());
         } catch (Exception e) {
-            logger.error("❌ KEY GENERATION: Error generating secret key: {}", e.getMessage());
+            log.error("KEY GENERATION: Error generating secret key: {}", e.getMessage());
             throw new RuntimeException("Key generation failed", e);
         }
     }
@@ -118,11 +117,11 @@ public class EncryptionService {
             String decrypted = decrypt(encrypted);
             
             boolean isValid = testData.equals(decrypted);
-            logger.info("🧪 VALIDATION: Encryption service test - {}", isValid ? "PASSED" : "FAILED");
+            log.info("VALIDATION: Encryption service test - {}", isValid ? "PASSED" : "FAILED");
             return isValid;
             
         } catch (Exception e) {
-            logger.error("❌ VALIDATION: Encryption service validation failed: {}", e.getMessage());
+            log.error("VALIDATION: Encryption service validation failed: {}", e.getMessage());
             return false;
         }
     }
