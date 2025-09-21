@@ -1,8 +1,9 @@
 package com.assignment.customer_batch_processor.validator;
 
 import com.assignment.customer_batch_processor.Customer_Entity.Customer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
+import org.slf4j.log;
+import org.slf4j.logFactory;
 import org.springframework.stereotype.Component;
 
 import java.util.regex.Pattern;
@@ -20,9 +21,9 @@ import java.util.regex.Pattern;
  * - City → (alphabet)
  */
 @Component
+@Slf4j
 public class CustomerValidator {
     
-    private static final Logger logger = LoggerFactory.getLogger(CustomerValidator.class);
     
     // Regex patterns for validation as per requirements
     private static final Pattern NAME_PATTERN = Pattern.compile("^[a-zA-Z\\s]+$");
@@ -40,7 +41,7 @@ public class CustomerValidator {
      */
     public boolean validateCustomer(Customer customer) {
         if (customer == null) {
-            logger.warn("❌ VALIDATOR: Customer object is null");
+            log.warn(" VALIDATOR: Customer object is null");
             return false;
         }
         
@@ -90,10 +91,10 @@ public class CustomerValidator {
         }
         
         if (!isValid) {
-            logger.debug("⚠️ VALIDATOR: Validation failed for customer '{}': {}", 
+            log.debug("VALIDATOR: Validation failed for customer '{}': {}",
                         customer.getName(), errors.toString().trim());
         } else {
-            logger.debug("✅ VALIDATOR: All validations passed for customer: {}", customer.getName());
+            log.debug("VALIDATOR: All validations passed for customer: {}", customer.getName());
         }
         
         return isValid;

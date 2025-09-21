@@ -1,8 +1,6 @@
 package com.assignment.customer_batch_processor.service;
 
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.*;
 import org.springframework.batch.core.launch.JobLauncher;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,8 +14,6 @@ import java.time.LocalDateTime;
 @Slf4j
 public class BatchJobService {
     
-    private static final Logger logger = LoggerFactory.getLogger(BatchJobService.class);
-    
     @Autowired
     private JobLauncher jobLauncher;
     
@@ -30,7 +26,7 @@ public class BatchJobService {
      */
     public JobExecution processCustomerFile(String filePath) {
         try {
-            logger.info("Starting batch job for file: {}", filePath);
+            log.info("Starting batch job for file: {}", filePath);
             
             // Validate file exists
             File file = new File(filePath);
@@ -39,7 +35,7 @@ public class BatchJobService {
             }
             
             long fileSizeKB = file.length() / 1024;
-            logger.info("Processing file of size: {} KB", fileSizeKB);
+            log.info("Processing file of size: {} KB", fileSizeKB);
             
             // Build job parameters
             JobParameters jobParameters = new JobParametersBuilder()
@@ -51,14 +47,14 @@ public class BatchJobService {
             // Launch the job
             JobExecution jobExecution = jobLauncher.run(csvReadingJob, jobParameters);
             
-            logger.info("Batch job completed with status: {}", jobExecution.getStatus());
-            logger.info("Job execution summary: Exit Status = {}, Start Time = {}, End Time = {}", 
+            log.info("Batch job completed with status: {}", jobExecution.getStatus());
+            log.info("Job execution summary: Exit Status = {}, Start Time = {}, End Time = {}", 
                        jobExecution.getExitStatus(), jobExecution.getStartTime(), jobExecution.getEndTime());
             
             return jobExecution;
             
         } catch (Exception e) {
-            logger.error("Error executing batch job for file {}: {}", filePath, e.getMessage());
+            log.error("Error executing batch job for file {}: {}", filePath, e.getMessage());
             throw new RuntimeException("Batch job execution failed", e);
         }
     }

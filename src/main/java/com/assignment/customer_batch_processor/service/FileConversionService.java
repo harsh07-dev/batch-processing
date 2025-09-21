@@ -1,10 +1,8 @@
 package com.assignment.customer_batch_processor.service;
 
-import com.assignment.customer_batch_processor.service.BatchJobService;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.JobExecution;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -18,9 +16,9 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 @Service
+@Slf4j
 public class FileConversionService {
     
-    private static final Logger logger = LoggerFactory.getLogger(FileConversionService.class);
     
     @Autowired
     private BatchJobService batchJobService;
@@ -57,12 +55,12 @@ public class FileConversionService {
         
         if (!Files.exists(uploadPath)) {
             Files.createDirectories(uploadPath);
-            logger.info("Created upload directory: {}", uploadDir);
+            log.info("Created upload directory: {}", uploadDir);
         }
         
         if (!Files.exists(csvPath)) {
             Files.createDirectories(csvPath);
-            logger.info("Created CSV directory: {}", csvDir);
+            log.info("Created CSV directory: {}", csvDir);
         }
     }
     
@@ -78,7 +76,7 @@ public class FileConversionService {
             fos.write(file.getBytes());
         }
         
-        logger.info("XLSX file saved: {}", filePath);
+        log.info("XLSX file saved: {}", filePath);
         return filePath;
     }
     
@@ -91,7 +89,7 @@ public class FileConversionService {
         String csvFileName = xlsxFile.getName().replace(".xlsx", ".csv");
         String csvFilePath = csvDir + csvFileName;
         
-        logger.info("Starting conversion from {} to {}", xlsxFilePath, csvFilePath);
+        log.info("Starting conversion from {} to {}", xlsxFilePath, csvFilePath);
         
         try (FileInputStream fis = new FileInputStream(xlsxFile);
              XSSFWorkbook workbook = new XSSFWorkbook(fis);
@@ -101,7 +99,7 @@ public class FileConversionService {
             Sheet sheet = workbook.getSheetAt(0);
             
             int totalRows = sheet.getLastRowNum() + 1;
-            logger.info("Total rows in XLSX file: {}", totalRows);
+            log.info("Total rows in XLSX file: {}", totalRows);
             
             // Process each row
             for (Row row : sheet) {
@@ -129,14 +127,14 @@ public class FileConversionService {
                 
                 // Log progress for large files
                 if (row.getRowNum() % 10000 == 0 && row.getRowNum() > 0) {
-                    logger.info("Converted {} rows to CSV", row.getRowNum());
+                    log.info("Converted {} rows to CSV", row.getRowNum());
                 }
             }
             
-            logger.info("Successfully converted XLSX to CSV. Total rows: {}", totalRows);
+            log.info("Successfully converted XLSX to CSV. Total rows: {}", totalRows);
             
         } catch (Exception e) {
-            logger.error("Error converting XLSX to CSV: {}", e.getMessage());
+            log.error("Error converting XLSX to CSV: {}", e.getMessage());
             throw new Exception("Failed to convert XLSX to CSV", e);
         }
         
@@ -186,15 +184,15 @@ public class FileConversionService {
      */
     private void triggerBatchProcessing(String csvFilePath) {
         try {
-            logger.info("Triggering batch processing for CSV file: {}", csvFilePath);
+            log.info("Triggering batch processing for CSV file: {}", csvFilePath);
             
             JobExecution jobExecution = batchJobService.processCustomerFile(csvFilePath);
             
-            logger.info("Batch job started with ID: {}, Status: {}", 
+            log.info("Batch job started with ID: {}, Status: {}", 
                        jobExecution.getId(), jobExecution.getStatus());
             
         } catch (Exception e) {
-            logger.error("Error starting batch job for file {}: {}", csvFilePath, e.getMessage());
+            log.error("Error starting batch job for file {}: {}", csvFilePath, e.getMessage());
             throw new RuntimeException("Failed to start batch processing", e);
         }
     }
@@ -210,7 +208,7 @@ public class FileConversionService {
             Row headerRow = sheet.getRow(0);
             
             if (headerRow == null) {
-                logger.warn("XLSX file has no header row");
+                log.info("XLSX file has no header row");
                 return false;
             }
             
@@ -219,16 +217,16 @@ public class FileConversionService {
             
             // Check if we have minimum required columns
             if (headerRow.getLastCellNum() < expectedHeaders.length) {
-                logger.warn("XLSX file has insufficient columns. Expected: {}, Found: {}", 
+                log.info("XLSX file has insufficient columns. Expected: {}, Found: {}",
                            expectedHeaders.length, headerRow.getLastCellNum());
                 return false;
             }
             
-            logger.info("XLSX file validation passed");
+            log.info("XLSX file validation passed");
             return true;
             
         } catch (Exception e) {
-            logger.error("Error validating XLSX file: {}", e.getMessage());
+            log.error("Error validating XLSX file: {}", e.getMessage());
             return false;
         }
     }
