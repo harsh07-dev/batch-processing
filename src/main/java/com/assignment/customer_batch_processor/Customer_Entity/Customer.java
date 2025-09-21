@@ -1,5 +1,6 @@
 package com.assignment.customer_batch_processor.Customer_Entity;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 import jakarta.persistence.Column;
@@ -16,6 +17,7 @@ import lombok.Setter;
 
 @Entity
 @Data
+@NoArgsConstructor
 @AllArgsConstructor
 public class Customer {
 	@Id
@@ -29,4 +31,29 @@ public class Customer {
 	private String aadhaarNumber;
 	private String panNumber;
 
+
+@Override
+public String toString() {
+    return "Customer{" +
+            "name='" + name + '\'' +
+            ", email='" + email + '\'' +
+            ", phoneNumber='" + phoneNumber + '\'' +
+            ", aadhaarNumber='" + aadhaarNumber + '\'' +
+            ", panNumber='" + panNumber + '\'' +
+            ", state='" + state + '\'' +
+            ", city='" + city + '\'' +
+            '}';
+}
+
+
+public void setCreatedDate(LocalDateTime now) {
+	// TODO Auto-generated method stub
+	
+}
+
+
+public void setUpdatedDate(Object object) {
+	// TODO Auto-generated method stub
+	
+}
 }
