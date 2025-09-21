@@ -57,8 +57,12 @@
 
 package com.assignment.customer_batch_processor.Controller;
 
+import com.assignment.customer_batch_processor.service.BatchJobService;
+import com.fasterxml.jackson.databind.util.JSONPObject;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.batch.core.JobExecution;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -70,17 +74,22 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.assignment.customer_batch_processor.service.FileConversionService;
 
+import java.util.HashMap;
+import java.util.Map;
+
+@Slf4j
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/batch")
 public class CustomerController {
-    
-    private static final Logger logger = LoggerFactory.getLogger(CustomerController.class);
-    
+
+    @Autowired
+    private BatchJobService batchJobService;
+
     @Autowired
     private FileConversionService fileConversionService;
     
-    @PostMapping("/upload-xlsx")
-    public ResponseEntity<String> handleExcelUpload(
+    @PostMapping("/upload")
+    public ResponseEntity<Object> handleExcelUpload(
             @RequestParam(value = "file", required = false) MultipartFile file) {
         
         if (file == null || file.isEmpty()) {
@@ -97,12 +106,28 @@ public class CustomerController {
             // Call service to convert XLSX to CSV
             String csvFilePath = fileConversionService.convertXlsxToCsv(file);
             
-            logger.info("Successfully converted {} to CSV", fileName);
-            return new ResponseEntity<>("File successfully uploaded and converted to CSV: " + csvFilePath, HttpStatus.OK);
+            log.info("Successfully converted {} to CSV", fileName);
+
+            JobExecution jobExecution = batchJobService.processCustomerFile(csvFilePath);
+
+            Map<String,Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "File accepted and processing started");
+//            response.put("csvFilePath", csvFilePath);
+            response.put("jobId", jobExecution.getId());
+            response.put("status", jobExecution.getStatus().toString());
+//            response.put("jobDetails", batchJobService.getJobExecutionStatus(jobExecution));
+
+            return new ResponseEntity<>(response, HttpStatus.OK);
             
         } catch (Exception e) {
-            logger.error("Error processing file upload: {}", e.getMessage());
-            return new ResponseEntity<>("Failed to process file: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            log.error("Error processing file upload: {}", e.getMessage());
+            Map<String,Object> response = new HashMap<>();
+
+            response.put("status","FAILED");
+            response.put("message", e.getMessage());
+
+            return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
     
