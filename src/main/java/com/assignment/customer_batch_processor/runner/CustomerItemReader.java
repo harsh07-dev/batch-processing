@@ -65,6 +65,7 @@ import org.springframework.batch.item.file.FlatFileItemReader;
 import org.springframework.batch.item.file.mapping.BeanWrapperFieldSetMapper;
 import org.springframework.batch.item.file.mapping.DefaultLineMapper;
 import org.springframework.batch.item.file.transform.DelimitedLineTokenizer;
+import org.springframework.batch.item.file.transform.FieldSet;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.stereotype.Component;
@@ -93,47 +94,91 @@ public class CustomerItemReader implements ItemReader<Customer> {
     private String filePath="src/main/resources/uploads/TestFile.csv";
     
     private int readCount = 0;
-    
+
     @PostConstruct
     public void initialize() {
         logger.info("READER: Initializing CSV file reader for: {}", filePath);
-        
+
         flatFileItemReader = new FlatFileItemReader<>();
         flatFileItemReader.setName("customerCsvReader");
-        
-        // Set file resource
+
         if (filePath != null) {
             flatFileItemReader.setResource(new FileSystemResource(filePath));
         }
-        
-        // Configure line mapper
+
+        // LineMapper that maps based on column names in the header row
         DefaultLineMapper<Customer> lineMapper = new DefaultLineMapper<>();
-        
-        // Configure tokenizer (CSV parsing)
-        DelimitedLineTokenizer tokenizer = new DelimitedLineTokenizer();
-        tokenizer.setNames("name", "email", "phoneNumber", "aadhaarNumber", "panNumber", "state", "city");
+
+        // Use a tokenizer that looks at the header row
+        DelimitedLineTokenizer tokenizer =
+                new org.springframework.batch.item.file.transform.DelimitedLineTokenizer() {
+                    @Override
+                    public FieldSet tokenize(String line) {
+                        return super.tokenize(line);
+                    }
+                };
+
         tokenizer.setDelimiter(",");
         tokenizer.setQuoteCharacter('"');
-        tokenizer.setStrict(false); // Handle missing columns gracefully
-        
-        // Configure field mapper (CSV → Object mapping)
+        tokenizer.setStrict(false);
+
+        // Map CSV columns by header name instead of index
         BeanWrapperFieldSetMapper<Customer> fieldSetMapper = new BeanWrapperFieldSetMapper<>();
         fieldSetMapper.setTargetType(Customer.class);
-        fieldSetMapper.setDistanceLimit(0); // Exact field matching
-        
+
         lineMapper.setLineTokenizer(tokenizer);
         lineMapper.setFieldSetMapper(fieldSetMapper);
-        
+
         flatFileItemReader.setLineMapper(lineMapper);
-        flatFileItemReader.setLinesToSkip(1); // Skip CSV header
-        
-        // Log skipped header
+        flatFileItemReader.setLinesToSkip(1); // Skip header row
         flatFileItemReader.setSkippedLinesCallback(line -> {
             logger.debug("📋 READER: Skipped header line: {}", line);
         });
-        
-        logger.info("✅ READER: CSV file reader configured successfully");
+
+        logger.info(" READER: CSV file reader configured successfully");
     }
+
+
+//    @PostConstruct
+//    public void initialize() {
+//        logger.info("READER: Initializing CSV file reader for: {}", filePath);
+//
+//        flatFileItemReader = new FlatFileItemReader<>();
+//        flatFileItemReader.setName("customerCsvReader");
+//
+//        // Set file resource
+//        if (filePath != null) {
+//            flatFileItemReader.setResource(new FileSystemResource(filePath));
+//        }
+//
+//        // Configure line mapper
+//        DefaultLineMapper<Customer> lineMapper = new DefaultLineMapper<>();
+//
+//        // Configure tokenizer (CSV parsing)
+//        DelimitedLineTokenizer tokenizer = new DelimitedLineTokenizer();
+//        tokenizer.setNames("name", "email", "phoneNumber", "aadhaarNumber", "panNumber", "state", "city");
+//        tokenizer.setDelimiter(",");
+//        tokenizer.setQuoteCharacter('"');
+//        tokenizer.setStrict(false); // Handle missing columns gracefully
+//
+//        // Configure field mapper (CSV → Object mapping)
+//        BeanWrapperFieldSetMapper<Customer> fieldSetMapper = new BeanWrapperFieldSetMapper<>();
+//        fieldSetMapper.setTargetType(Customer.class);
+//        fieldSetMapper.setDistanceLimit(0); // Exact field matching
+//
+//        lineMapper.setLineTokenizer(tokenizer);
+//        lineMapper.setFieldSetMapper(fieldSetMapper);
+//
+//        flatFileItemReader.setLineMapper(lineMapper);
+//        flatFileItemReader.setLinesToSkip(1); // Skip CSV header
+//
+//        // Log skipped header
+//        flatFileItemReader.setSkippedLinesCallback(line -> {
+//            logger.debug("📋 READER: Skipped header line: {}", line);
+//        });
+//
+//        logger.info("✅ READER: CSV file reader configured successfully");
+//    }
     
     @Override
     public Customer read() throws Exception {

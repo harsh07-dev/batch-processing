@@ -1,5 +1,6 @@
 package com.assignment.customer_batch_processor.service;
 
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.*;
@@ -12,6 +13,7 @@ import java.io.File;
 import java.time.LocalDateTime;
 
 @Service
+@Slf4j
 public class BatchJobService {
     
     private static final Logger logger = LoggerFactory.getLogger(BatchJobService.class);
