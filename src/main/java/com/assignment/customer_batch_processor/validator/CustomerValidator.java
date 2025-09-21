@@ -2,8 +2,6 @@ package com.assignment.customer_batch_processor.validator;
 
 import com.assignment.customer_batch_processor.Customer_Entity.Customer;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.log;
-import org.slf4j.logFactory;
 import org.springframework.stereotype.Component;
 
 import java.util.regex.Pattern;
