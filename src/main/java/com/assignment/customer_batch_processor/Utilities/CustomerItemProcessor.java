@@ -4,6 +4,7 @@ import com.assignment.customer_batch_processor.Customer_Entity.Customer;
 import com.assignment.customer_batch_processor.service.EncryptionService;
 import com.assignment.customer_batch_processor.validator.CustomerValidator;
 import com.assignment.customer_batch_processor.validator.ValidationException;
+import jakarta.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.item.ItemProcessor;
 import org.springframework.beans.factory.annotation.Autowired;

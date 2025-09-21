@@ -4,13 +4,14 @@ import com.assignment.customer_batch_processor.Customer_Entity.Customer;
 import com.assignment.customer_batch_processor.Utilities.CustomerItemProcessor;
 import com.assignment.customer_batch_processor.validator.RetryException;
 import com.assignment.customer_batch_processor.validator.ValidationException;
+import jakarta.persistence.EntityManagerFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.job.builder.JobBuilder;
-import org.springframework.batch.core.step.builder.StepBuilder;
 import org.springframework.batch.core.repository.JobRepository;
+import org.springframework.batch.core.step.builder.StepBuilder;
 import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.item.ItemReader;
 import org.springframework.batch.item.ItemWriter;
@@ -27,21 +28,14 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.FileSystemResource;
-import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataAccessResourceFailureException;
-import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.retry.RetryPolicy;
-import org.springframework.retry.policy.SimpleRetryPolicy;
 import org.springframework.transaction.PlatformTransactionManager;
 
-import jakarta.persistence.EntityManagerFactory;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
 
 @Configuration
 @Slf4j
-public class CsvReaderBatchConfig {
+public class BatchConfig {
     
     
     @Autowired
@@ -97,9 +91,6 @@ public class CsvReaderBatchConfig {
                 .writer(csvItemWriter)
                 .faultTolerant()
                 .noRetry(ValidationException.class)
-                .noRetry(org.springframework.retry.RetryException.class)
-                .noSkip(ValidationException.class)
-                .noSkip(org.springframework.retry.RetryException.class)
                 .retry(DataAccessResourceFailureException.class)
 //                .retry(DataAccessException.class)
                 .retry(RetryException.class)
@@ -111,28 +102,7 @@ public class CsvReaderBatchConfig {
 
 
 
-        /**
-         * or being more specific about retry, we can add such exception whose parent class in DataAccessException.
-         * return new StepBuilder("csvReadingStep", jobRepository)
-         *         .<Customer, Customer>chunk(1000, transactionManager)
-         *         .reader(csvItemReader)
-         *         .processor(csvItemProcessor)
-         *         .writer(csvItemWriter)
-         *         .faultTolerant()
-         *
-         *         // Specific transient database errors
-         *         .retry(DataAccessResourceFailureException.class)  // Connection issues
-         *         .retry(DeadlockLoserDataAccessException.class)    // Deadlocks
-         *         .retry(CannotAcquireLockException.class)          // Lock timeouts
-         *         .retry(QueryTimeoutException.class)               // Query timeouts
-         *
-         *         .retryLimit(3)
-         *         .noRetry(ValidationException.class)
-         *         .noRetry(DataIntegrityViolationException.class)   // Don't retry constraint violations
-         *         .allowStartIfComplete(false)
-         *         .startLimit(5)
-         *         .build();
-         */
+
     }
 
     @Bean

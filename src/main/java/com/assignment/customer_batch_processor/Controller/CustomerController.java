@@ -113,12 +113,7 @@ public class CustomerController {
 
             JobExecution jobExecution = batchJobService.processCustomerFile(csvFilePath);
 
-            Map<String,Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("message", "File accepted and processing started");
-//            response.put("csvFilePath", csvFilePath);
-            response.put("jobId", jobExecution.getId());
-            response.put("status", jobExecution.getStatus().toString());
+
             if(jobExecution.getStatus().equals(BatchStatus.FAILED)) {
                 List<Throwable> failureExceptions = jobExecution.getAllFailureExceptions();
                 String errorMessage = "Job failed";
@@ -140,7 +135,12 @@ public class CustomerController {
 
                 return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
             }
-//            response.put("jobDetails", batchJobService.getJobExecutionStatus(jobExecution));
+            Map<String,Object> response = new HashMap<>();
+
+            response.put("success", true);
+            response.put("message", "File accepted and processing started");
+            response.put("jobId", jobExecution.getId());
+            response.put("status", jobExecution.getStatus().toString());
 
             return new ResponseEntity<>(response, HttpStatus.OK);
             
