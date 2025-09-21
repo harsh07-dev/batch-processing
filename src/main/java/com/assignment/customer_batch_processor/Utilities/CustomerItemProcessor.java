@@ -34,7 +34,7 @@ public class CustomerItemProcessor implements ItemProcessor<Customer, Customer> 
     private int processedCount = 0;
     
     @Override
-    public Customer process(Customer customer) throws Exception {
+    public Customer process(Customer customer) throws ValidationException {
         processedCount++;
         
         log.info(" PROCESSOR: Processing customer #{} - {}", processedCount, customer.getName());
@@ -61,11 +61,6 @@ public class CustomerItemProcessor implements ItemProcessor<Customer, Customer> 
             log.error(" PROCESSOR: Error processing customer {}: {}",
                     customer.getName(), ve.getMessage());
             throw ve;
-        } catch (Exception e) {
-            log.error(" PROCESSOR: Error processing customer {}: {}",
-                        customer.getName(), e.getMessage());
-            logProgress();
-            throw e;
         }
     }
     
@@ -106,8 +101,7 @@ public class CustomerItemProcessor implements ItemProcessor<Customer, Customer> 
             // Remove spaces and special characters
             if(customerValidator.isValidAadhaar(customer.getAadhaarNumber())) {
                 customer.setAadhaarNumber(customer.getAadhaarNumber().trim().replaceAll("[^0-9]", ""));
-            }
-            else {
+            } else {
                 throw new ValidationException("Invalid aadhar for name {} "+ customer.getName());
             }
         }
@@ -143,7 +137,7 @@ public class CustomerItemProcessor implements ItemProcessor<Customer, Customer> 
     /**
      * STEP 4: Encrypt sensitive data (Aadhaar & PAN)
      */
-    private void encryptSensitiveData(Customer customer) throws Exception {
+    private void encryptSensitiveData(Customer customer) throws ValidationException {
         log.info(" PROCESSOR: Encrypting sensitive data");
         
         if (customer.getAadhaarNumber() != null) {

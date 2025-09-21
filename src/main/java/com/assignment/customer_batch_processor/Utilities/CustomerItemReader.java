@@ -10,6 +10,7 @@ import org.springframework.batch.item.file.mapping.BeanWrapperFieldSetMapper;
 import org.springframework.batch.item.file.mapping.DefaultLineMapper;
 import org.springframework.batch.item.file.transform.DelimitedLineTokenizer;
 import org.springframework.batch.item.file.transform.FieldSet;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.stereotype.Component;
 
@@ -32,8 +33,8 @@ public class CustomerItemReader implements ItemReader<Customer> {
     
     private FlatFileItemReader<Customer> flatFileItemReader;
     
-    //@Value("#{jobParameters['filePath']}")
-    private String filePath="src/main/resources/uploads/TestFile.csv";
+    @Value("#{jobParameters['filePath']}")
+    private String filePath;
 
     /**
      * -- GETTER --
@@ -41,6 +42,10 @@ public class CustomerItemReader implements ItemReader<Customer> {
      */
     @Getter
     private int readCount = 0;
+
+    public CustomerItemReader(String filePath) {
+        this.filePath = filePath;
+    }
 
     @PostConstruct
     public void initialize() {

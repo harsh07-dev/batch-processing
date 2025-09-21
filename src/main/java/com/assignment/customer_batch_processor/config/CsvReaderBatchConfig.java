@@ -29,10 +29,15 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataAccessResourceFailureException;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.retry.RetryPolicy;
+import org.springframework.retry.policy.SimpleRetryPolicy;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import jakarta.persistence.EntityManagerFactory;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 @Configuration
 @Slf4j
@@ -46,12 +51,33 @@ public class CsvReaderBatchConfig {
     private CustomerItemProcessor customerItemProcessor;
     
     @Bean
-    public Job csvReadingJob(JobRepository jobRepository, Step csvReadingStep) {
+    public Job csvReadingJob(JobRepository jobRepository, Step csvReadingStep, Step validationStep) {
         log.info("Creating CSV Reading Job with validation and encryption");
         return new JobBuilder("csvReadingJob", jobRepository)
-                .start(csvReadingStep)
-                // Jobs are restartable by default in modern Spring Batch
+                .start(validationStep)
+                .on("FAILED").fail()                 // Explicitly fail the job
+                .on("COMPLETED").to(csvReadingStep)  // Continue to processing if validation passes
+                .from(csvReadingStep)
+                .on("*").end()                       // End job after processing
+                .end()
                 .build();
+    }
+
+    @Bean
+    public Step validationStep(JobRepository jobRepository,
+                               PlatformTransactionManager transactionManager,
+                               ItemReader<Customer> csvItemReader,
+                               ItemProcessor<Customer, Customer> csvItemProcessor,
+                               ItemWriter<Customer> noOpWriter) {
+        log.info("inside validationStep");
+        return new StepBuilder("validationStep", jobRepository)
+                .<Customer, Customer>chunk(1000, transactionManager)
+                .reader(csvItemReader)
+                .processor(csvItemProcessor) // Uses your CustomerItemProcessor
+                .writer(noOpWriter)
+                .build();
+
+
     }
     
     @Bean
@@ -62,21 +88,27 @@ public class CsvReaderBatchConfig {
                              ItemWriter<Customer> csvItemWriter) {
         
         log.info("Creating CSV Reading Step with chunk size: 1000");
-        
+
+
         return new StepBuilder("csvReadingStep", jobRepository)
                 .<Customer, Customer>chunk(1000, transactionManager)
                 .reader(csvItemReader)
                 .processor(csvItemProcessor) // Uses your CustomerItemProcessor
                 .writer(csvItemWriter)
                 .faultTolerant()
-                .retry(DataAccessResourceFailureException.class) // retry on DB connectivity issues// retry on deadlocks
-                .retry(DataAccessException.class)
-                .retry(RetryException.class)// ONLY retry infrastructure errors
-                .retryLimit(3)                            // Retry up to 3 times
-                .noRetry(ValidationException.class)       // NEVER retry validation errors
+                .noRetry(ValidationException.class)
+                .noRetry(org.springframework.retry.RetryException.class)
+                .noSkip(ValidationException.class)
+                .noSkip(org.springframework.retry.RetryException.class)
+                .retry(DataAccessResourceFailureException.class)
+//                .retry(DataAccessException.class)
+                .retry(RetryException.class)
+                .retryLimit(3)
                 .allowStartIfComplete(false)
-                .startLimit(5)                            // Allow job restart up to 5 times
+                .startLimit(5)
                 .build();
+
+
 
 
         /**
@@ -156,6 +188,14 @@ public class CsvReaderBatchConfig {
                     consoleItemWriter()
                 ))
                 .build();
+    }
+
+    @Bean
+    public ItemWriter<Customer> noOpWriter() {
+        return customers -> {
+            log.info("Validated {} customers successfully", customers.size());
+            // Don't save anything - just validate
+        };
     }
     
     /**
