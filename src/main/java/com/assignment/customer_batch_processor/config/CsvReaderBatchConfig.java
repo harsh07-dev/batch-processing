@@ -66,9 +66,9 @@ public class CsvReaderBatchConfig {
                 .writer(csvItemWriter)
                 
                 // ADDED: Fault tolerance for invalid records
-                .faultTolerant()
-                .skipLimit(1000) // Skip up to 1000 invalid records
-                .skip(Exception.class)
+//                .faultTolerant()
+//                .skipLimit(1000) // Skip up to 1000 invalid records
+//                .skip(Exception.class)
                 
                 .build();
     }

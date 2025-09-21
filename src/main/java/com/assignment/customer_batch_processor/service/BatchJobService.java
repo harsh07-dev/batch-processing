@@ -24,7 +24,7 @@ public class BatchJobService {
     /**
      * Process a CSV file using Spring Batch
      */
-    public JobExecution processCustomerFile(String filePath) {
+    public JobExecution processCustomerFile(String filePath) throws Exception{
         try {
             log.info("Starting batch job for file: {}", filePath);
             

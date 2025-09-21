@@ -41,9 +41,8 @@ public class FileConversionService {
         String xlsxFilePath = saveUploadedFile(file);
         
         // Convert XLSX to CSV
-        String csvFilePath = performXlsxToCsvConversion(xlsxFilePath);
-        
-        return csvFilePath;
+
+        return performXlsxToCsvConversion(xlsxFilePath);
     }
     
     /**
