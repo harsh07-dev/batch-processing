@@ -2,6 +2,7 @@ package com.assignment.customer_batch_processor.config;
 
 import com.assignment.customer_batch_processor.Customer_Entity.Customer;
 import com.assignment.customer_batch_processor.Utilities.CustomerItemProcessor;
+import com.assignment.customer_batch_processor.Utilities.CustomerItemWriter;
 import com.assignment.customer_batch_processor.validator.RetryException;
 import com.assignment.customer_batch_processor.validator.ValidationException;
 import jakarta.persistence.EntityManagerFactory;
@@ -43,6 +44,9 @@ public class BatchConfig {
     
     @Autowired
     private CustomerItemProcessor customerItemProcessor;
+
+    @Autowired
+    private CustomerItemWriter customerItemWriter;
     
     @Bean
     public Job csvReadingJob(JobRepository jobRepository, Step csvReadingStep, Step validationStep) {
@@ -65,7 +69,7 @@ public class BatchConfig {
                                ItemWriter<Customer> noOpWriter) {
         log.info("inside validationStep");
         return new StepBuilder("validationStep", jobRepository)
-                .<Customer, Customer>chunk(1000, transactionManager)
+                .<Customer, Customer>chunk(2000, transactionManager)
                 .reader(csvItemReader)
                 .processor(csvItemProcessor) // Uses your CustomerItemProcessor
                 .writer(noOpWriter)
@@ -85,7 +89,7 @@ public class BatchConfig {
 
 
         return new StepBuilder("csvReadingStep", jobRepository)
-                .<Customer, Customer>chunk(1000, transactionManager)
+                .<Customer, Customer>chunk(2000, transactionManager)
                 .reader(csvItemReader)
                 .processor(csvItemProcessor) // Uses your CustomerItemProcessor
                 .writer(csvItemWriter)
@@ -94,7 +98,8 @@ public class BatchConfig {
                 .retry(DataAccessResourceFailureException.class)
 //                .retry(DataAccessException.class)
                 .retry(RetryException.class)
-                .retryLimit(3)
+                //.retryLimit(3)
+                .retryLimit(2)
                 .allowStartIfComplete(false)
                 .startLimit(5)
                 .build();
@@ -105,38 +110,43 @@ public class BatchConfig {
 
     }
 
+    /**
+     * This class is same as customer item reader class
+     */
+    /
+
     @Bean
     @StepScope
     public FlatFileItemReader<Customer> csvItemReader(@Value("#{jobParameters['filePath']}") String filePath) {
         log.info("Configuring CSV reader for file: {}", filePath);
-        
+
         FlatFileItemReader<Customer> reader = new FlatFileItemReader<>();
         reader.setName("csvItemReader");
         reader.setResource(new FileSystemResource(filePath));
         reader.setSaveState(true);
-        
+
         // Configure line mapper
         DefaultLineMapper<Customer> lineMapper = new DefaultLineMapper<>();
-        
+
         // Configure tokenizer
         DelimitedLineTokenizer tokenizer = new DelimitedLineTokenizer();
         tokenizer.setNames("name", "email", "phoneNumber", "aadhaarNumber", "panNumber", "state", "city");
         tokenizer.setDelimiter(",");
         tokenizer.setQuoteCharacter('"');
         tokenizer.setStrict(false);
-        
+
         // Configure field set mapper
         BeanWrapperFieldSetMapper<Customer> fieldSetMapper = new BeanWrapperFieldSetMapper<>();
         fieldSetMapper.setTargetType(Customer.class);
         fieldSetMapper.setDistanceLimit(0);
-        
+
         lineMapper.setLineTokenizer(tokenizer);
         lineMapper.setFieldSetMapper(fieldSetMapper);
-        
+
         reader.setLineMapper(lineMapper);
         reader.setLinesToSkip(1); // Skip header row
         reader.setSkippedLinesCallback(line -> log.info("Skipped header line: {}", line));
-        
+
         return reader;
     }
     
@@ -167,19 +177,32 @@ public class BatchConfig {
             // Don't save anything - just validate
         };
     }
+
+    @Bean
+    public ItemWriter<Customer> noOpProcess() {
+        return customers -> {
+            log.info("Validated {} customers successfully", customers.size());
+            // Don't save anything - just validate
+        };
+    }
     
     /**
      * Database Item Writer - saves customers to database using JPA
      */
-    @Bean
-    public JpaItemWriter<Customer> databaseItemWriter() {
-        return new JpaItemWriterBuilder<Customer>()
-                .entityManagerFactory(entityManagerFactory)
-                .build();
-    }
-
+//    @Bean
+//    public JpaItemWriter<Customer> databaseItemWriter() {
+//        return new JpaItemWriterBuilder<Customer>()
+//                .entityManagerFactory(entityManagerFactory)
+//                .build();
+//    }
+@Bean
+public ItemWriter<Customer> databaseItemWriter()
+{
+    log.error("using customerItemwriter for database operations");
+    return customerItemWriter;
+}
     /**
-     * Console Item Writer - prints customer info to console (optional)
+     * Console Item Writer - prints customer info to console
      */
     @Bean
     public ItemWriter<Customer> consoleItemWriter() {

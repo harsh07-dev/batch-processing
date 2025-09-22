@@ -35,6 +35,7 @@ public class EncryptionService {
             key = key + "0".repeat(16 - key.length());
         } else if (key.length() > 16) {
             key = key.substring(0, 16);
+
         }
         return new SecretKeySpec(key.getBytes(), ALGORITHM);
     }

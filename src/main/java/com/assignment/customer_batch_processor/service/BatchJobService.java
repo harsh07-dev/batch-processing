@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.File;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Service
 @Slf4j
@@ -45,6 +46,7 @@ public class BatchJobService {
             JobParameters jobParameters = new JobParametersBuilder()
                     .addString("filePath", filePath)
                     .addString("startTime", LocalDateTime.now().toString())
+                    .addString("jobid" , UUID.randomUUID().toString())
                     .addLong("timestamp", System.currentTimeMillis())
                     .toJobParameters();
             

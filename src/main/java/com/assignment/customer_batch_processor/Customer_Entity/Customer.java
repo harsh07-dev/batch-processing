@@ -21,8 +21,8 @@ import lombok.Setter;
 @AllArgsConstructor
 public class Customer {
 	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;	
+	@GeneratedValue(strategy = GenerationType.UUID)
+	private UUID id;
 	private String name;
 	private String email;
 	private String phoneNumber;
