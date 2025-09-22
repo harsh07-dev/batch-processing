@@ -21,16 +21,30 @@ import lombok.Setter;
 @AllArgsConstructor
 public class Customer {
 	@Id
-	@GeneratedValue(strategy = GenerationType.UUID)
-	private UUID id;
-	private String name;
-	private String email;
-	private String phoneNumber;
-	private String state;
-	private String city;
-	private String aadhaarNumber;
-	private String panNumber;
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@Column(name = "id", updatable = false,nullable = false)
+	private Long id;
 
+	@Column(name = "name", nullable = false, length = 100)
+	private String name;
+
+	@Column(name = "email", nullable = false, length = 150)
+	private String email;
+
+	@Column(name = "phone_number", nullable = false, length = 10)
+	private String phoneNumber;
+
+	@Column(name = "state", nullable = false, length = 100)
+	private String state;
+
+	@Column(name = "city", nullable = false, length = 100)
+	private String city;
+
+	@Column(name = "aadhaar_number_encrypted", nullable = false, length = 500)
+	private String aadhaarNumber;
+
+	@Column(name = "pan_number_encrypted", nullable = false, length = 500)
+	private String panNumber;
 
 @Override
 public String toString() {
@@ -44,6 +58,15 @@ public String toString() {
             ", city='" + city + '\'' +
             '}';
 }
+
+
+
+
+
+
+
+
+
 
 
 public void setCreatedDate(LocalDateTime now) {

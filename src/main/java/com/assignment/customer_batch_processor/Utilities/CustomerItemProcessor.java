@@ -24,13 +24,10 @@ import org.springframework.stereotype.Component;
 @Component
 @Slf4j
 public class CustomerItemProcessor implements ItemProcessor<Customer, Customer> {
-
     @Autowired
-    private CustomerValidator customerValidator;
-
+    public CustomerValidator customerValidator;
     @Autowired
-    private EncryptionService encryptionService;
-
+    public EncryptionService encryptionService;
     private int processedCount = 0;
 
     @Override
@@ -39,13 +36,10 @@ public class CustomerItemProcessor implements ItemProcessor<Customer, Customer> 
         log.info(" PROCESSOR: Processing customer #{} - {}", processedCount, customer.getName());
 
         try {
-            // STEP 1: Clean and normalize data
+            // STEP: Clean and normalize data
             Customer customerFromCsv = cleanAndBuildCustomer(customer);
 
-            // STEP 2: Encrypt sensitive data (optional)
-            // encryptSensitiveData(customerFromCsv);
-
-            // STEP 3: Set audit timestamps
+            // STEP: Set audit timestamps
             customerFromCsv.setCreatedDate(java.time.LocalDateTime.now());
             customerFromCsv.setUpdatedDate(null);
 
@@ -63,7 +57,11 @@ public class CustomerItemProcessor implements ItemProcessor<Customer, Customer> 
     private Customer cleanAndBuildCustomer(Customer customer) {
         log.info(" PROCESSOR: Cleaning customer data");
 
+
+
         // Name
+
+
         if (customer.getName() != null) {
             if (customerValidator.isValidName(customer.getName())) {
                 customer.setName(customer.getName().trim());
@@ -75,6 +73,7 @@ public class CustomerItemProcessor implements ItemProcessor<Customer, Customer> 
         // Email
         if (customer.getEmail() != null) {
             if (customerValidator.isValidEmail(customer.getEmail())) {
+
                 customer.setEmail(customer.getEmail().trim().toLowerCase());
             } else {
                 throw new ValidationException("Invalid email for name " + customer.getName());
@@ -126,15 +125,19 @@ public class CustomerItemProcessor implements ItemProcessor<Customer, Customer> 
             }
         }
 
+
+
         return customer;
     }
 
-    /*
-     * Logs progress every 1000 records
-     */
+
+    //  Logs progress every 1000 records
+
     private void logProgress() {
         if (processedCount % 1000 == 0) {
             log.info(" PROCESSOR: Progress - Processed: {}", processedCount);
         }
     }
+
+
 }

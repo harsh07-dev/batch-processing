@@ -18,7 +18,7 @@ import jakarta.annotation.PostConstruct;
 
 /**
  * READER COMPONENT
- * 
+ *
  * Responsibility:
  * 1. Read CSV file line by line
  * 2. Parse each line into Customer object
@@ -29,90 +29,39 @@ import jakarta.annotation.PostConstruct;
 @Component
 @StepScope
 @Slf4j
-public class CustomerItemReader implements ItemReader<Customer> {
-    
-    private FlatFileItemReader<Customer> flatFileItemReader;
-    
-    @Value("#{jobParameters['filePath']}")
-    private String filePath;
+public class CustomerItemReader {
 
-    /**
-     * -- GETTER --
-     *  Get total number of records read so far
-     */
-    @Getter
-    private int readCount = 0;
+    public static FlatFileItemReader<Customer> customerFlatFileItemReader(String filePath) {
 
-    public CustomerItemReader(String filePath) {
-        this.filePath = filePath;
-    }
+        FlatFileItemReader<Customer> reader = new FlatFileItemReader<>();
+        reader.setName("csvItemReader");
+        reader.setResource(new FileSystemResource(filePath));
+        reader.setSaveState(true);
 
-    @PostConstruct
-    public void initialize() {
-        log.info("READER: Initializing CSV file reader for: {}", filePath);
-
-        flatFileItemReader = new FlatFileItemReader<>();
-        flatFileItemReader.setName("customerCsvReader");
-
-        if (filePath != null) {
-            flatFileItemReader.setResource(new FileSystemResource(filePath));
-        }
-
-        // LineMapper that maps based on column names in the header row
+        // Configure line mapper
         DefaultLineMapper<Customer> lineMapper = new DefaultLineMapper<>();
 
-        // Use a tokenizer that looks at the header row
-        DelimitedLineTokenizer tokenizer =
-                new org.springframework.batch.item.file.transform.DelimitedLineTokenizer() {
-                    @Override
-                    public FieldSet tokenize(String line) {
-                        return super.tokenize(line);
-                    }
-                };
-
+        // Configure tokenizer
+        DelimitedLineTokenizer tokenizer = new DelimitedLineTokenizer();
+        tokenizer.setNames("name", "email", "phoneNumber", "aadhaarNumber", "panNumber", "state", "city");
         tokenizer.setDelimiter(",");
         tokenizer.setQuoteCharacter('"');
         tokenizer.setStrict(false);
 
-        // Map CSV columns by header name instead of index
+        // Configure field set mapper
         BeanWrapperFieldSetMapper<Customer> fieldSetMapper = new BeanWrapperFieldSetMapper<>();
         fieldSetMapper.setTargetType(Customer.class);
+        fieldSetMapper.setDistanceLimit(0);
 
         lineMapper.setLineTokenizer(tokenizer);
         lineMapper.setFieldSetMapper(fieldSetMapper);
 
-        flatFileItemReader.setLineMapper(lineMapper);
-        flatFileItemReader.setLinesToSkip(1); // Skip header row
-        flatFileItemReader.setSkippedLinesCallback(line -> {
-            log.info(" READER: Skipped header line: {}", line);
-        });
+        reader.setLineMapper(lineMapper);
+        reader.setLinesToSkip(1); // Skip header row
+        reader.setSkippedLinesCallback(line -> log.info("Skipped header line: {}", line));
 
-        log.info(" READER: CSV file reader configured successfully");
+        return reader;
+
     }
-    
-    @Override
-    public Customer read() throws Exception {
-        if (flatFileItemReader == null) {
-            initialize();
-        }
-        
-        // Read next customer from CSV
-        Customer customer = flatFileItemReader.read();
-        
-        if (customer != null) {
-            readCount++;
-            
-            // Log progress for large files
-            if (readCount % 5000 == 0) {
-                log.info("READER: Read {} customers from CSV file", readCount);
-            }
-            
-            log.info("READER: Read customer - Name: {}, Email: {}",
-                        customer.getName(), customer.getEmail());
-        } else {
-            log.info("READER: Finished reading CSV file. Total customers read: {}", readCount);
-        }
-        
-        return customer;
-    }
+
 }
