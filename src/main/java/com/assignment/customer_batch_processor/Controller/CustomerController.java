@@ -94,18 +94,24 @@ public class CustomerController {
     @PostMapping("/upload")
     public ResponseEntity<Object> handleBatchUpload(
             @RequestParam(value = "file", required = false) MultipartFile file) {
-        
-        if (file == null || file.isEmpty()) {
-            return new ResponseEntity<>("File is not present. Please upload a file.", HttpStatus.BAD_REQUEST);
-        }
-        
+        try {
+
+           if (file == null || file.isEmpty()) {
+               throw new Exception ("File is not present. Please upload a file. ");
+           }
+
+
         // Validate file extension
         String fileName = file.getOriginalFilename();
         if (fileName == null || !fileName.toLowerCase().endsWith(".xlsx")) {
-            return new ResponseEntity<>("Invalid file type. Only .xlsx files are allowed.", HttpStatus.BAD_REQUEST);
+             throw new Exception ("Invalid file type. Only .xlsx files are allowed. ");
         }
+
         
-        try {
+
+
+
+
             // Call service to convert XLSX to CSV
             String csvFilePath = fileConversionService.convertXlsxToCsv(file);
             
@@ -113,12 +119,7 @@ public class CustomerController {
 
             JobExecution jobExecution = batchJobService.processCustomerFile(csvFilePath);
 
-            Map<String,Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("message", "File accepted and processing started");
-//            response.put("csvFilePath", csvFilePath);
-            response.put("jobId", jobExecution.getId());
-            response.put("status", jobExecution.getStatus().toString());
+
             if(jobExecution.getStatus().equals(BatchStatus.FAILED)) {
                 List<Throwable> failureExceptions = jobExecution.getAllFailureExceptions();
                 String errorMessage = "Job failed";
@@ -140,7 +141,14 @@ public class CustomerController {
 
                 return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
             }
-//            response.put("jobDetails", batchJobService.getJobExecutionStatus(jobExecution));
+            Map<String,Object> response = new HashMap<>();
+
+            response.put("jobId", jobExecution.getJobParameters().getString("jobid"));
+            response.put("status", jobExecution.getStatus().toString());
+           // response.put("success", true);
+            response.put("message", "File accepted and processing started");
+           // response.put("jobId", jobExecution.getJobParameters().getString("jobid"));
+           // response.put("status", jobExecution.getStatus().toString());
 
             return new ResponseEntity<>(response, HttpStatus.OK);
             
