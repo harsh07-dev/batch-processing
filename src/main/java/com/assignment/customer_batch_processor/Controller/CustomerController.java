@@ -145,10 +145,8 @@ public class CustomerController {
 
             response.put("jobId", jobExecution.getJobParameters().getString("jobid"));
             response.put("status", jobExecution.getStatus().toString());
-           // response.put("success", true);
             response.put("message", "File accepted and processing started");
-           // response.put("jobId", jobExecution.getJobParameters().getString("jobid"));
-           // response.put("status", jobExecution.getStatus().toString());
+
 
             return new ResponseEntity<>(response, HttpStatus.OK);
             

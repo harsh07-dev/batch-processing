@@ -10,16 +10,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
- * PROCESSOR COMPONENT
- *
- * Responsibility:
- * 1. Receive Customer objects from Reader
- * 2. Validate all fields using regex patterns
- * 3. Clean and normalize data
- * 4. Encrypt sensitive data (Aadhaar & PAN)
- * 5. Generate UUID for primary key
- * 6. Filter out invalid records (return null)
- * 7. Pass valid records to Writer
+ * Receive Customer objects from Reader
+ * Validate all fields using regex patterns
+ * Clean and normalize data
+ * Pass valid records to Writer
  */
 @Component
 @Slf4j
@@ -49,7 +43,7 @@ public class CustomerItemProcessor implements ItemProcessor<Customer, Customer> 
             return customerFromCsv;
 
         } catch (ValidationException ve) {
-            log.error(" PROCESSOR: Error processing customer {}: {}", customer.getName(), ve.getMessage());
+            log.info(" PROCESSOR: Error processing customer {}: {}", customer.getName(), ve.getMessage());
             throw ve;
         }
     }
@@ -129,6 +123,13 @@ public class CustomerItemProcessor implements ItemProcessor<Customer, Customer> 
 
         return customer;
     }
+
+
+
+
+
+
+
 
 
     //  Logs progress every 1000 records

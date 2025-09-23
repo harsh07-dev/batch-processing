@@ -107,7 +107,7 @@ public class BatchConfig {
                 .retry(DataAccessException.class)
                 .retry(RetryException.class)
                 .retryLimit(3)
-                .allowStartIfComplete(false)
+                .allowStartIfComplete(true)
                 .startLimit(5)
                 .build();
     }
