@@ -1,34 +1,33 @@
 
+
+
 package com.assignment.customer_batch_processor.Utilities;
 
 import com.assignment.customer_batch_processor.Customer_Entity.Customer;
+import com.assignment.customer_batch_processor.repository.CustomerRepository;
 import com.assignment.customer_batch_processor.service.EncryptionService;
 import com.assignment.customer_batch_processor.validator.RetryException;
 import com.assignment.customer_batch_processor.validator.ValidationException;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.item.Chunk;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Component;
 
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
-import jakarta.transaction.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.zip.DataFormatException;
+import java.util.Optional;
 
 /**
  * WRITER COMPONENT
- *
- * Responsibility:
- * 1. Receive processed Customer objects from Processor
- * 2. Save customers to database in chunks
- * 3. Handle database transactions
- * 4. Manage duplicate records
- * 5. Log writing progress and statistics
- * 6. Handle database errors gracefully
+ * Receive processed Customer objects from Processor
+ * Save customers to database in chunks
+ * Handle database transactions
+ * Log writing progress and statistics
+ * Handle database errors gracefully
  */
 @Component
 @Slf4j
@@ -38,11 +37,16 @@ public class CustomerItemWriter implements ItemWriter<Customer> {
     public EntityManager entityManager;
 
     @Autowired
+    CustomerRepository customerRepository;
+
+    @Autowired
     public EncryptionService encryptionService;
 
+    // Updated static variables for retry testing
+    private static int totalProcessed = 0;
+   // private static boolean hasFailedOnce = false;
+
    // private static int attemptCount = 0;
-   private static int totalProcessed = 0;
-    private static boolean hasFailedOnce = false;
 
     @Override
     @Transactional
@@ -51,70 +55,59 @@ public class CustomerItemWriter implements ItemWriter<Customer> {
         List<? extends Customer> customers = chunk.getItems();
         int chunkSize = customers.size();
 
+        log.info("WRITER: Writing chunk of {} customers to database. Total so far: {} ", chunkSize, totalProcessed);
 
-
-        log.info("WRITER: Writing chunk of {} customers to database Attempt: Total so far: {} " ,chunkSize, totalProcessed);
-
-        //SIMPLE RESTART TEST: Fail after processing N records, only on first attempt
-
-
-//        if (totalProcessed >5 && !hasFailedOnce) {
-//            hasFailedOnce = true;
-//            log.info("RESTART TEST:Simulating failure after processing {} records", totalProcessed);
-//            log.info("my Restart is working fine");
-//            RuntimeException e=new RuntimeException("cause");
-//            throw new RetryException("Simulated failure for restart testing after " + totalProcessed ,e);
+        /**
+         * Test to check if retry is working.
+         */
+//        if (totalProcessed >= 2 && attemptCount < 2) {
+//            attemptCount++;
+//            log.info("RETRY TEST: Simulating failure after processing {} records", totalProcessed);
+//            throw new RetryException("Simulated failure for retry testing after " + totalProcessed, new RuntimeException("cause"));
 //        }
+
 
         for (Customer customer : customers) {
             try {
-
+                // Your existing code...
                 if (customer.getAadhaarNumber() != null) {
-            String encryptedAadhaar = encryptionService.encrypt(customer.getAadhaarNumber());
-            customer.setAadhaarNumber(encryptedAadhaar);
-            log.info(" PROCESSOR: Aadhaar encrypted successfully");
+                    String encryptedAadhaar = encryptionService.encrypt(customer.getAadhaarNumber());
+                    customer.setAadhaarNumber(encryptedAadhaar);
+                    log.debug(" WRITER: Aadhaar encrypted successfully");
                 }
 
                 if (customer.getPanNumber() != null) {
-            String encryptedPan = encryptionService.encrypt(customer.getPanNumber());
-            customer.setPanNumber(encryptedPan);
-          log.info(" PROCESSOR: PAN encrypted successfully");
+                    String encryptedPan = encryptionService.encrypt(customer.getPanNumber());
+                    customer.setPanNumber(encryptedPan);
+                    log.debug(" WRITER: PAN encrypted successfully");
                 }
-
-//               if (isDuplicateCustomer(customer)){
-//                   log.info(" PROCESSOR: Duplicate email found for customer: {}", customer.getEmail());
-//                   throw new ValidationException("Duplicate email: " + customer.getEmail());
-//               }
-
+                //isDuplicateCustomer(customer);
                 setAuditFields(customer);
-
-                // STEP:Save to database
                 saveCustomer(customer);
-                //totalProcessed++;
+
+
+                totalProcessed++;
                 log.info("WRITER: Saved customer #{} - Name: {}", totalProcessed, customer.getName());
 
             } catch (Exception e) {
-                log.error("WRITER: Failed to save customer {}: {}", customer.getName(), e.getMessage());
+                log.info("WRITER: Failed to save customer {}: {}", customer.getName(), e.getMessage());
                 throw new RetryException("Exception in write data {} " + e.getMessage(), e);
             }
         }
-        totalProcessed += chunkSize;
+
         // Flush changes to database
         try {
-            entityManager.flush();
+            customerRepository.flush();
             entityManager.clear(); // Clear persistence context to free memory
         } catch (Exception e) {
-            log.error("WRITER: Error flushing entity manager: {}", e.getMessage());
+            log.info("WRITER: Error flushing entity manager: {}", e.getMessage());
             throw new RetryException("Exception in write data {} " + e.getMessage(), e);
         }
 
         log.info("Successfully wrote {} customers. Total processed: {}", chunkSize, totalProcessed);
-
     }
 
-    /**
-     * Set audit fields for customer
-     */
+
     private void setAuditFields(Customer customer) {
         LocalDateTime now = LocalDateTime.now();
         customer.setCreatedDate(now);
@@ -124,29 +117,29 @@ public class CustomerItemWriter implements ItemWriter<Customer> {
     /**
      * STEP : Save customer to database
      */
-    private void saveCustomer(Customer customer) {
+    private void saveCustomer(Customer customer) throws Exception {
         try {
-            entityManager.persist(customer);
+            customerRepository.save(customer);
         } catch (Exception e) {
             log.error("Exception in save customer");
-            throw new RetryException("Exception in save Customer " + e.getMessage(),e);
+            throw new Exception("Exception in save Customer " + e.getMessage(), e);
         }
     }
 
-    // Check if customer already exists (by email)
-
-//    private boolean isDuplicateCustomer(Customer customer) {
+    /**
+     * i am checking if my customer is having the duplicate entry just to test.
+     */
+//    public void isDuplicateCustomer(Customer customer) throws RetryException {
 //        try {
-//            Long count = entityManager.createQuery(
-//                "SELECT COUNT(c) FROM Customer c WHERE c.email = :email", Long.class)
-//                .setParameter("email", customer.getEmail())
-//                .getSingleResult();
+//            Optional<Customer> c = customerRepository.findByEmail(customer.getEmail());
 //
-//            return count > 0;
-//
+//            if (c.isPresent()) {
+//                log.info("is duplicate email present {} ", c.get().getEmail());
+//                throw new ValidationException("Customer All ready exist" + c.get().getName());
+//            }
 //        } catch (Exception e) {
-//            log.error("WRITER: Error checking for duplicate from DB: {}", e.getMessage());
-//    return true;
+//            log.error("Duplicate customer exist");
+//            throw new org.springframework.retry.RetryException("Customer All ready exist" + customer.getName());
 //        }
-//    }
 }
+
